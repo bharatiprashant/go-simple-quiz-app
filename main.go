@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
 	csvFilename := flag.String("csv", "problems.csv", "a csv file in the format of question,answer")
+	timeLimit := flag.Int("Limit", 30, "the time limit for the quiz in seconds")
 	flag.Parse()
 	// os package interacts with the operating system
 	file, err := os.Open(*csvFilename)
@@ -22,13 +24,32 @@ func main() {
 		exit("Failed to parse the provided CSV file.")
 	}
 	problems := parseLines(lines)
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+
 	correct := 0
+problemLoop: // labels
 	for i, p := range problems {
-		fmt.Printf("Problem #%d: %s = \n", i+1, p.q)
-		var answer string
-		fmt.Scanf("%s\n", &answer)
-		if answer == p.a {
-			correct++
+		fmt.Printf("Problem #%d:%s = ", i+1, p.q)
+		answerCh := make(chan string) // making a channel https://gobyexample.com/channels
+
+		/*
+			this is a go routine and also anonymous
+		*/
+		go func() { // Go routines are functions or methods that run concurrently with other functions or methods.
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerCh <- answer
+		}() // call the go routine function
+		select {
+		case <-timer.C: // waiting for the mes sage from the channel, this line blocks/stop the program
+			fmt.Println()
+			// return
+			break problemLoop
+		case answer := <-answerCh:
+
+			if answer == p.a {
+				correct++
+			}
 		}
 
 	}
