@@ -52,9 +52,7 @@ func parseLines(lines [][]string) []problem {
 	return ret
 }
 
-/*
-Using structure we can use any type of file like json or excel
-*/
+
 
 type problem struct {
 	q string
